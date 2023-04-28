@@ -1,1 +1,195 @@
 
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": []
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "code",
+      "execution_count": 1,
+      "metadata": {
+        "id": "j10XtghitnKs"
+      },
+      "outputs": [],
+      "source": [
+        "import tensorflow as tf\n",
+        "from keras import Sequential, layers\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Primera tarea: crear y entrenar el Autoencoder\n",
+        "def autoencoder(input = 50):\n",
+        "  model = Sequential(name='Autoencoder')\n",
+        "  # Encoder\n",
+        "  model.add(layers.Dense(30,input_shape=(input,)))\n",
+        "  model.add(layers.Dropout(0.2))\n",
+        "  model.add(layers.Dense(20, activation='relu'))\n",
+        "  model.add(layers.Dropout(0.2))\n",
+        "  model.add(layers.Dense(10, activation='relu', name='cuello'))\n",
+        "  # Decoder\n",
+        "  model.add(layers.Dropout(0.2))\n",
+        "  model.add(layers.Dense(20, activation='relu'))\n",
+        "  model.add(layers.Dropout(0.2))\n",
+        "  model.add(layers.Dense(30, activation='relu'))\n",
+        "  model.add(layers.Dense(50))\n",
+        "  return model\n",
+        "\n",
+        "encoder = autoencoder()\n",
+        "encoder.summary()"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "DwteB-v3vK4D",
+        "outputId": "077fadb1-b069-4fd9-8a0a-0e0a685df383"
+      },
+      "execution_count": 2,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Model: \"Autoencoder\"\n",
+            "_________________________________________________________________\n",
+            " Layer (type)                Output Shape              Param #   \n",
+            "=================================================================\n",
+            " dense (Dense)               (None, 30)                1530      \n",
+            "                                                                 \n",
+            " dropout (Dropout)           (None, 30)                0         \n",
+            "                                                                 \n",
+            " dense_1 (Dense)             (None, 20)                620       \n",
+            "                                                                 \n",
+            " dropout_1 (Dropout)         (None, 20)                0         \n",
+            "                                                                 \n",
+            " cuello (Dense)              (None, 10)                210       \n",
+            "                                                                 \n",
+            " dropout_2 (Dropout)         (None, 10)                0         \n",
+            "                                                                 \n",
+            " dense_2 (Dense)             (None, 20)                220       \n",
+            "                                                                 \n",
+            " dropout_3 (Dropout)         (None, 20)                0         \n",
+            "                                                                 \n",
+            " dense_3 (Dense)             (None, 30)                630       \n",
+            "                                                                 \n",
+            " dense_4 (Dense)             (None, 50)                1550      \n",
+            "                                                                 \n",
+            "=================================================================\n",
+            "Total params: 4,760\n",
+            "Trainable params: 4,760\n",
+            "Non-trainable params: 0\n",
+            "_________________________________________________________________\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Segunda tarea: quitar el decoder, añadir la FFNN y entrenarla. Recordad congelar el encoder\n",
+        "def add_ffnn(encoder):\n",
+        "  # Congelar capas del encoder\n",
+        "  capa = encoder.get_layer(index=0)\n",
+        "  i = 1\n",
+        "  while capa.name != 'cuello':\n",
+        "    capa.trainable = False\n",
+        "    capa = encoder.get_layer(index=i)\n",
+        "    i += 1\n",
+        "  capa.trainable = False\n",
+        "  # Eliminar el decoder\n",
+        "  j = len(encoder.layers)\n",
+        "  while i < j:\n",
+        "    encoder.pop()\n",
+        "    j -= 1\n",
+        "  # Añadir la FFNN\n",
+        "  encoder.add(layers.BatchNormalization())\n",
+        "  encoder.add(layers.Dropout(0.2))\n",
+        "  encoder.add(layers.Dense(20,activation='sigmoid'))\n",
+        "  encoder.add(layers.BatchNormalization())\n",
+        "  encoder.add(layers.Dropout(0.2))\n",
+        "  encoder.add(layers.Dense(40,activation='sigmoid'))\n",
+        "  encoder.add(layers.Dropout(0.2))\n",
+        "  encoder.add(layers.Dense(1,activation='sigmoid'))\n",
+        "  return encoder\n",
+        "\n",
+        "modelo = add_ffnn(encoder)\n",
+        "modelo.summary()"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "Eg8bzzhJ8dcw",
+        "outputId": "510ef5c6-e19a-442c-8b69-17569e9c14a2"
+      },
+      "execution_count": 9,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Model: \"Autoencoder\"\n",
+            "_________________________________________________________________\n",
+            " Layer (type)                Output Shape              Param #   \n",
+            "=================================================================\n",
+            " dense (Dense)               (None, 30)                1530      \n",
+            "                                                                 \n",
+            " dropout (Dropout)           (None, 30)                0         \n",
+            "                                                                 \n",
+            " dense_1 (Dense)             (None, 20)                620       \n",
+            "                                                                 \n",
+            " dropout_1 (Dropout)         (None, 20)                0         \n",
+            "                                                                 \n",
+            " cuello (Dense)              (None, 10)                210       \n",
+            "                                                                 \n",
+            " batch_normalization_12 (Bat  (None, 10)               40        \n",
+            " chNormalization)                                                \n",
+            "                                                                 \n",
+            " dropout_22 (Dropout)        (None, 10)                0         \n",
+            "                                                                 \n",
+            " dense_23 (Dense)            (None, 20)                220       \n",
+            "                                                                 \n",
+            " batch_normalization_13 (Bat  (None, 20)               80        \n",
+            " chNormalization)                                                \n",
+            "                                                                 \n",
+            " dropout_23 (Dropout)        (None, 20)                0         \n",
+            "                                                                 \n",
+            " dense_24 (Dense)            (None, 40)                840       \n",
+            "                                                                 \n",
+            " dropout_24 (Dropout)        (None, 40)                0         \n",
+            "                                                                 \n",
+            " dense_25 (Dense)            (None, 1)                 41        \n",
+            "                                                                 \n",
+            "=================================================================\n",
+            "Total params: 3,581\n",
+            "Trainable params: 1,161\n",
+            "Non-trainable params: 2,420\n",
+            "_________________________________________________________________\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [],
+      "metadata": {
+        "id": "pNtsai99ICoL"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
